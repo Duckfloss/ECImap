@@ -1,15 +1,88 @@
+#!/usr/bin/env ruby
 
-# This goes through a CSV of two columns
-# Attr and Color
-# compares code to ECI map and adds
-# it if necessary
+# ecimap.rb FILE.csv IN/OUT
+#			-h, --help, Prints help text
+#			-v, --verbose, Verbose
+#			-e FILE, Full path to alternative ECLink.ini file
 
-
+# Require Gems
 require 'csv'
+require 'optparse'
+require 'ostruct'
 
-$csv = "C:/Documents and Settings/pos/desktop/converttable.csv"
+# TEMPS
+#$file = "C:/Documents and Settings/pos/desktop/out.csv"
+ARGV << "-h"
 
-$ECImap = "data/ECImap.ini"
+def parse_args
+
+	options = OpenStruct.new
+	options.file = nil
+	options.direction = nil
+	options.eci = "C:/Documents and Settings/pos/Desktop/Website/Toolbox/ECImap/data/ECLink.INI"
+	options.verbose = false
+
+	if ARGV.include?("-h")
+		print_help
+	end
+
+	if ARGV.include?("-v")
+		ARGV.delete("-v")
+		options.verbose = true
+	end
+
+	file = ARGV.select {|i| i=~/\.csv$/}[0]
+	if valid_file?(file)
+		options.file = File.absolute_path(file)
+	end
+
+	direction = ARGV.select {|i| i=~/[IN|OUT]/}[0]
+	if direction.nil?
+		puts "Please indicate either \"IN\" or \"OUT\".\nType \"ecimap.rb -h\" for more information"
+		exit 0
+	end
+
+
+	options
+end
+
+def print_help
+	puts "Command takes a CSV-formated file with two columns: \"Attr\" and \"Color\"\n"
+	puts "It parses the file and compares it to ECI\'s mapping file.\n"
+	puts "Then it either fills IN the \"Color\" column from the\n"
+	puts "ECI file, or it OUTputs color maps to the ECI file.\n"
+	puts "\n"
+	puts "Usage: leemd.rb FILE IN/OUT [options]\n"
+	puts "\n"
+	puts "  FILE - is a csv-file with two columns: Attr and Color\n"
+	puts "  IN/OUT - IN fills IN the csv file from ECI\n"
+	puts "\t\tOUT copies OUT the map from the csv to ECI\n"
+	puts "\n"
+	puts "Options:\n"
+	puts "\t-v\t\tRuns verbosely\n"
+	puts "\t-h\t\tPrints this help\n"
+	puts "\t-e FILE\t\tFull path to alternative ECLink.ini file\n"
+	puts "\t\t\tdefault is \'Website\/Toolbox\/ECImap\/data\/ECLink.INI\'\n"
+	puts "\t\t\tYou'll have to manually copy the ECLink.INI file to\n"
+	puts "\t\t\tRPro's directory: \'R:\/RETAIL\/RPRO\/EC\'.\n"
+	puts "\t\t\tI didn't feel like effing around with RPro's system.\n"
+#	exit 0
+end
+
+options = parse_args
+
+def valid_file?(file)
+	if file.nil?
+		puts "Please provide a file to format"
+#		exit 0
+	end
+	if !File.exists?(file)
+		puts "#{file} doesn't seem to exist. Please check\nyour file path and try again."
+#		exit 0
+	end
+	true
+end
+
 
 def build_converter(csv)
 	# Build the converter
@@ -34,7 +107,7 @@ end
 
 def main
 	build_converter($csv)
-	build_map($ECImap)
+	build_map($ecimap)
 	no=0
 	$converter.each do |k,v|
 		if !$map[k].nil?
@@ -53,107 +126,22 @@ def main
 		end
 	end
 
-
-=begin
-	files = Dir.entries($img_dir)
-	files.each do |file|
-		if file=~/\.jpg/
-			if !file.match(/\w{16}\_/)
-			no+=1
-			puts "#{no} > #{file}"
-				code = file.match(/.{8}/)
-				format = file.match(/_\w{1,3}\.jpg$/)
-				this_converter = $converter["#{code}"]
-				if this_converter
-					newname = "#{this_converter[:pf_id]}_#{this_converter[:color]}#{format}"
-					File.rename(file,newname)
-				end
-			end
-		end
-	end
-=end
 end
 
-#!/usr/bin/env ruby
 
-#TODO: sublists in list style
-#TODO: skip empty lines in lists
-#TODO: add vendor name based on VCS field
 
-# Require Gems
-require 'csv'
-require 'htmlentities'
-require 'optparse'
-require 'ostruct'
 
-# Require Scripts
-scriptdir = File.dirname(__FILE__)
-require "#{scriptdir}/lib/leemdconvert.rb"
-
-# TEMPS
-#$file = "C:/Documents and Settings/pos/desktop/out.csv"
-#ARGV = [ $file ]
-
-def valid_file?(file)
-	if file.nil?
-		puts "Please provide a file to format"
-		exit 0
-	end
-	if !file =~ /\.csv$/
-		puts "Requires a CSV-formated spreadsheet"
-		exit 0
-	end
-	if !File.exists?(file)
-		puts "#{file} doesn't seem to exist. Please check\nyour file path and try again."
-		exit 0
-	end
-	true
-end
-
-def parse_args
-
-	options = OpenStruct.new
-	options.source = nil
-	options.verbose = false
-
-	if ARGV.include?("-h")
-		print_help
-	end
-
-	if ARGV.include?("-v")
-		ARGV.delete("-v")
-		options.verbose = true
-	end
-
-	if valid_file?(ARGV[0])
-		options.source = File.absolute_path(ARGV[0])
-	end
-
-	options
-
-end
-
-def print_help
-	puts "Command takes a CSV-formated file, parses the \"desc\"\n"
-	puts "field and, returns a new file formated for posting on\n"
-	puts "the web. See the online manual for LeeMD shortcode rules.\n"
-	puts "\n"
-	puts "Usage: leemd.rb FILE.csv [options]\n"
-	puts "\n"
-	puts "Options:\n"
-	puts "\t-v\t\t\tRuns verbosely\n"
-	puts "\t-h\t\t\tPrints this help\n"
-	exit 0
-end
 
 if __FILE__ == $0
 
 	options = parse_args
 
-	path = options.source.slice(0,options.source.index(/\/[A-Za-z0-9\-\_]+\.csv$/)+1)
-	file = options.source.slice(/[A-Za-z0-9\-\_]+\.csv$/)
-	csv_target = "#{path}FILTERED#{file}"
+	puts options
 
-	doit(options.source, csv_target)
+#	path = options.source.slice(0,options.source.index(/\/[A-Za-z0-9\-\_]+\.csv$/)+1)
+#	file = options.source.slice(/[A-Za-z0-9\-\_]+\.csv$/)
+#	csv_target = "#{path}FILTERED#{file}"
+
+#	doit(options.source, csv_target)
 
 end
