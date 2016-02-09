@@ -9,10 +9,30 @@
 require 'csv'
 require 'optparse'
 require 'ostruct'
+require 'pry'
 
 # TEMPS
-#$file = "C:/Documents and Settings/pos/desktop/out.csv"
-ARGV << "-h"
+ARGV << "C:/Documents and Settings/pos/desktop/test.csv"
+ARGV << "IN"
+
+
+
+def valid_file?(file,type)
+	if type == "csv"
+		if file.nil?
+			puts "Please provide a source .csv file"
+			exit 0
+		end
+	end
+	if !File.exists?(file)
+		puts "#{file} doesn't seem to exist. Please check\nyour file path and try again."
+		if type == "ini"
+			puts "The default location for this file is \"C:\/Documents and Settings\/pos\/Desktop\/Website\/Toolbox\/ECImap\/data\/ECLink.INI\""
+		end
+		exit 0
+	end
+	true
+end
 
 def parse_args
 
@@ -32,25 +52,25 @@ def parse_args
 	end
 
 	file = ARGV.select {|i| i=~/\.csv$/}[0]
-	if valid_file?(file)
+	if valid_file?(file,"csv")
 		options.file = File.absolute_path(file)
 	end
 
-	direction = ARGV.select {|i| i=~/[IN|OUT]/}[0]
-	if direction.nil?
+	options.direction = ARGV.select {|i| i=~/[IN|OUT]/}[0]
+	if options.direction.nil?
 		puts "Please indicate either \"IN\" or \"OUT\".\nType \"ecimap.rb -h\" for more information"
 		exit 0
 	end
-
 
 	options
 end
 
 def print_help
+	puts "\nECIMAP.RB\n"
 	puts "Command takes a CSV-formated file with two columns: \"Attr\" and \"Color\"\n"
-	puts "It parses the file and compares it to ECI\'s mapping file.\n"
-	puts "Then it either fills IN the \"Color\" column from the\n"
-	puts "ECI file, or it OUTputs color maps to the ECI file.\n"
+	puts "It parses the file and compares it to ECI\'s mapping file. Then it either\n"
+	puts "fills IN the \"Color\" column from the ECI file, or it OUTputs color maps\n"
+	puts "to the ECI file.\n"
 	puts "\n"
 	puts "Usage: leemd.rb FILE IN/OUT [options]\n"
 	puts "\n"
@@ -65,43 +85,31 @@ def print_help
 	puts "\t\t\tdefault is \'Website\/Toolbox\/ECImap\/data\/ECLink.INI\'\n"
 	puts "\t\t\tYou'll have to manually copy the ECLink.INI file to\n"
 	puts "\t\t\tRPro's directory: \'R:\/RETAIL\/RPRO\/EC\'.\n"
-	puts "\t\t\tI didn't feel like effing around with RPro's system.\n"
-#	exit 0
-end
-
-options = parse_args
-
-def valid_file?(file)
-	if file.nil?
-		puts "Please provide a file to format"
-#		exit 0
-	end
-	if !File.exists?(file)
-		puts "#{file} doesn't seem to exist. Please check\nyour file path and try again."
-#		exit 0
-	end
-	true
+	puts "\t\t\tI didn't feel like effing around with RPro's system.\n\n"
+	exit 0
 end
 
 
-def build_converter(csv)
+def get_csv(csv)
 	# Build the converter
-	$converter = Hash.new
+	csvfile = {}
 	csv_data = CSV.read(csv, :headers=>true,:skip_blanks=>true,:header_converters=>:symbol)
 	csv_data.each do |row|
-		$converter[row[:attr]] = row[:color]
+		csvfile[row[:attr]] = row[:color]
 	end
+	csvfile
 end
 
-def build_map(ini)
-	$map = Hash.new
-	if File.exist?(ini)
-		file = File.open(ini)
+def get_eci(eci)
+	map = {}
+	if File.exist?(eci)
+		file = File.open(eci)
 		while line = file.gets do
-			$map["#{line.match(/(?<=\>).+(?=\=)/)}"] = "#{line.match(/(?<=\=).+/)}"
+			map["#{line.match(/(?<=\>).+(?=\=)/)}"] = "#{line.match(/(?<=\=).+/)}"
 		end
 		file.close if !file.closed?
 	end
+	map
 end
 
 
@@ -128,9 +136,31 @@ def main
 
 end
 
+def in_it
+	
+
+end
+
+def out_it
+
+
+end
 
 
 
+
+options = parse_args
+#options.to_h.each { |i,o| puts "#{i} = #{o}" }
+$csv = get_csv(options.file)
+$eci = get_eci(options.eci)
+
+
+if options.direction == "IN"
+	in_it
+elsif options.direction == "OUT"
+	out_it
+end
+#exit 0
 
 if __FILE__ == $0
 
