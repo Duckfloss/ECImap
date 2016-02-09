@@ -9,7 +9,7 @@
 require 'csv'
 require 'optparse'
 require 'ostruct'
-require 'pry'
+require 'inifile'
 
 # TEMPS
 ARGV << "C:/Documents and Settings/pos/desktop/test.csv"
@@ -101,13 +101,13 @@ def get_csv(csv)
 end
 
 def get_eci(eci)
+	ecifile = IniFile.load(eci, :encoding=>'Windows-1252')['WordMapping']
 	map = {}
-	if File.exist?(eci)
-		file = File.open(eci)
-		while line = file.gets do
-			map["#{line.match(/(?<=\>).+(?=\=)/)}"] = "#{line.match(/(?<=\=).+/)}"
+
+	ecifile.each do |k,v|
+		if k.match /^ATTR/
+			map[k.sub('ATTR<_as_>','')] = v
 		end
-		file.close if !file.closed?
 	end
 	map
 end
