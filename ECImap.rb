@@ -17,9 +17,9 @@ require 'ostruct'
 require 'inifile'
 
 # TEMPS
-ARGV << "C:/Documents and Settings/pos/desktop/test.csv"
-ARGV << "OUT"
-ARGV << "-e C:/Documents and Settings/pos/Desktop/ECLink.INI"
+#ARGV << "C:/Documents and Settings/pos/desktop/test.csv"
+#ARGV << "OUT"
+#ARGV << "-e C:/Documents and Settings/pos/Desktop/ECLink.INI"
 
 
 def valid_file?(file,type)
@@ -179,25 +179,15 @@ def out_it
 	exit 0
 end
 
-	$options = parse_args
-	$csv = get_csv($options.file)
-	$wordmapping = get_eci($options.eci)
-	# Build intermediary hash from CSV file
-	$map_hash = map_hash
-
-
-	if $options.direction == "IN"
-		in_it
-	elsif $options.direction == "OUT"
-		out_it
-	end
-
 
 if __FILE__ == $0
 
 	$options = parse_args
 	$csv = get_csv($options.file)
 	$wordmapping = get_eci($options.eci)
+	# Build intermediary hash from CSV file
+	$map_hash = map_hash
+
 
 	if $options.direction == "IN"
 		in_it
