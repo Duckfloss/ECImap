@@ -5,6 +5,11 @@
 #			-v, --verbose, Verbose
 #			-e FILE, Full path to alternative ECLink.ini file
 
+# TODO
+#		tailor exit codes
+#		eliminate global vars
+#		inline documentation
+
 # Require Gems
 require 'csv'
 require 'optparse'
