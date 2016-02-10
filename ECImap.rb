@@ -92,19 +92,14 @@ end
 
 def get_csv(csv)
 	# Build the converter
-	csvfile = {}
-	csv_data = CSV.read(csv, :headers=>true,:skip_blanks=>true,:header_converters=>:symbol)
-	csv_data.each do |row|
-		csvfile[row[:attr]] = row[:color]
-	end
-	csvfile
+	csv_data = CSV.read(csv, :headers=>true,:skip_blanks=>false,:header_converters=>:symbol)
 end
 
 def get_eci(eci)
-	ecifile = IniFile.load(eci, :encoding=>'Windows-1252')['WordMapping']
+	$eci = IniFile.load(eci, :encoding=>'Windows-1252')['WordMapping']
 	map = {}
 
-	ecifile.each do |k,v|
+	$eci.each do |k,v|
 		if k.match /^ATTR/
 			map[k.sub('ATTR<_as_>','')] = v
 		end
@@ -113,31 +108,32 @@ def get_eci(eci)
 end
 
 
-def main
-	build_converter($csv)
-	build_map($ecimap)
-	no=0
-	$converter.each do |k,v|
-		if !$map[k].nil?
-			if $map[k].length < 1 || $map[k] != v
-				$map["#{k}"] = v
-			end
-		else
-			$map["#{k}"] = v
-		end
-	end
-
-	hashout = $map.sort_by{|k,v| k.downcase}
-	File.open($ECImap,"w") do |file|
-		hashout.each do |k,v|
-			file.puts "ATTR<_as_>#{k}=#{v}"
-		end
-	end
-
-end
-
 def in_it
-	
+	# Build intermediary hash from CSV file
+	$map_hash = {}
+	$csv.each do |row|
+		$map_hash[row[:attr]] = row[:color]
+	end
+	$map_hash.delete nil
+
+	# Get map definitions from ECI file
+	$map_hash.each_key do |col|
+		$map_hash[col] = $wordmapping[col] unless $wordmapping[col].nil?
+	end
+
+	# Write map definitions back to CSV file
+	CSV.open(options.file, 'w') do |csv_obj|
+		csv_obj << ['Attr','Color']
+		$csv.each do |row|
+			if !row[:attr].nil? && $map_hash.has_key?( row[:attr] )
+				this_arry = [row[:attr], $map_hash[row[:attr]]]
+				csv_obj << this_arry
+			else
+				this_arry = [ row[:attr], nil ]
+				csv_obj << this_arry
+			end
+		end
+	end
 
 end
 
@@ -149,17 +145,16 @@ end
 
 
 
-options = parse_args
-#options.to_h.each { |i,o| puts "#{i} = #{o}" }
-$csv = get_csv(options.file)
-$eci = get_eci(options.eci)
+$options = parse_args
+$csv = get_csv($options.file)
+$wordmapping = get_eci($options.eci)
 
-
-if options.direction == "IN"
+if $options.direction == "IN"
 	in_it
-elsif options.direction == "OUT"
+elsif $options.direction == "OUT"
 	out_it
 end
+
 #exit 0
 
 if __FILE__ == $0
