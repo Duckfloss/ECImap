@@ -5,6 +5,10 @@
 #			-v, --verbose, Verbose
 #			-e FILE, Full path to alternative ECLink.ini file
 
+# TODO
+#		tailor exit codes
+#		eliminate global vars
+
 # Require Gems
 require 'csv'
 require 'optparse'
@@ -12,9 +16,9 @@ require 'ostruct'
 require 'inifile'
 
 # TEMPS
-#ARGV << "C:/Documents and Settings/pos/desktop/test.csv"
-#ARGV << "IN"
-
+ARGV << "C:/Documents and Settings/pos/desktop/test.csv"
+ARGV << "OUT"
+ARGV << "-e soemthingorother.ini"
 
 
 def valid_file?(file,type)
@@ -26,9 +30,6 @@ def valid_file?(file,type)
 	end
 	if !File.exists?(file)
 		puts "#{file} doesn't seem to exist. Please check\nyour file path and try again."
-		if type == "ini"
-			puts "The default location for this file is \"C:\/Documents and Settings\/pos\/Desktop\/Website\/Toolbox\/ECImap\/data\/ECLink.INI\""
-		end
 		exit 0
 	end
 	true
@@ -49,6 +50,17 @@ def parse_args
 	if ARGV.include?("-v")
 		ARGV.delete("-v")
 		options.verbose = true
+	end
+	
+	e = ARGV.grep(/^\-e/)
+	if e.length > 0
+		e.sub!(/^\-e /)
+		if e.length < 1
+			puts "Please give us a file name to get/put map data from/to. The default location \nfor this file is \"C:/Documents and Settings/pos/Desktop/Website/Toolbox/ECImap/data/ECLink.INI\" if you wanna just use that."
+			exit 0
+		else
+			options.eci = e
+		end
 	end
 
 	file = ARGV.select {|i| i=~/\.csv$/}[0]
@@ -107,14 +119,17 @@ def get_eci(eci)
 	map
 end
 
-
-def in_it
-	# Build intermediary hash from CSV file
-	$map_hash = {}
+def map_hash
 	$csv.each do |row|
 		$map_hash[row[:attr]] = row[:color]
 	end
 	$map_hash.delete nil
+end
+
+
+def in_it
+	# Build intermediary hash from CSV file
+	$map_hash = map_hash
 
 	# Get map definitions from ECI file
 	$map_hash.each_key do |col|
@@ -141,6 +156,16 @@ def out_it
 
 
 end
+
+	$options = parse_args
+	$csv = get_csv($options.file)
+	$wordmapping = get_eci($options.eci)
+
+	if $options.direction == "IN"
+		in_it
+	elsif $options.direction == "OUT"
+		out_it
+	end
 
 
 if __FILE__ == $0
