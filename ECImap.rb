@@ -5,10 +5,6 @@
 #			-v, --verbose, Verbose
 #			-e FILE, Full path to alternative ECLink.ini file
 
-# TODO
-#		tailor exit codes
-#		eliminate global vars
-
 # Require Gems
 require 'csv'
 require 'optparse'
@@ -18,7 +14,7 @@ require 'inifile'
 # TEMPS
 ARGV << "C:/Documents and Settings/pos/desktop/test.csv"
 ARGV << "OUT"
-ARGV << "-e soemthingorother.ini"
+ARGV << "-e C:/Documents and Settings/pos/Desktop/ECLink.INI"
 
 
 def valid_file?(file,type)
@@ -52,9 +48,9 @@ def parse_args
 		options.verbose = true
 	end
 	
-	e = ARGV.grep(/^\-e/)
+	e = ARGV.select{|flag| flag=~/^\-e/}[0]
 	if e.length > 0
-		e.sub!(/^\-e /)
+		e.sub!(/^\-e\ /,"")
 		if e.length < 1
 			puts "Please give us a file name to get/put map data from/to. The default location \nfor this file is \"C:/Documents and Settings/pos/Desktop/Website/Toolbox/ECImap/data/ECLink.INI\" if you wanna just use that."
 			exit 0
@@ -63,7 +59,7 @@ def parse_args
 		end
 	end
 
-	file = ARGV.select {|i| i=~/\.csv$/}[0]
+	file = ARGV.select {|flag| flag=~/\.csv$/}[0]
 	if valid_file?(file,"csv")
 		options.file = File.absolute_path(file)
 	end
@@ -108,10 +104,11 @@ def get_csv(csv)
 end
 
 def get_eci(eci)
-	$eci = IniFile.load(eci, :encoding=>'Windows-1252')['WordMapping']
+	$eci = IniFile.load(eci, :encoding=>'Windows-1252')
+	wordmapping = $eci['WordMapping']
 	map = {}
 
-	$eci.each do |k,v|
+	wordmapping.each do |k,v|
 		if k.match /^ATTR/
 			map[k.sub('ATTR<_as_>','')] = v
 		end
@@ -120,17 +117,21 @@ def get_eci(eci)
 end
 
 def map_hash
+	map_hash = {}
 	$csv.each do |row|
-		$map_hash[row[:attr]] = row[:color]
+		map_hash[row[:attr]] = row[:color]
 	end
-	$map_hash.delete nil
+	map_hash.delete(nil)
+	inter = map_hash.sort_by {|attr,color| attr.downcase}
+	map_hash = {}
+	inter.each do |item|
+		map_hash[item[0]] = item[1]
+	end
+	map_hash
 end
 
 
 def in_it
-	# Build intermediary hash from CSV file
-	$map_hash = map_hash
-
 	# Get map definitions from ECI file
 	$map_hash.each_key do |col|
 		$map_hash[col] = $wordmapping[col] unless $wordmapping[col].nil?
@@ -154,12 +155,31 @@ end
 
 def out_it
 
+	$wordmapping.merge!($map_hash) do |attr,oldcolor,newcolor|
+		if oldcolor.nil?
+			newcolor
+		else
+			oldcolor
+		end
+	end
 
+	$wordmapping = $wordmapping.sort_by{|attr,color| attr.downcase}
+	newwordmapping = {}
+	$wordmapping.each do |attr,color|
+		newwordmapping["ATTR<_as_>#{attr}"] = color
+	end
+
+	$eci['WordMapping'] = newwordmapping
+	$eci.write
+	exit 0
 end
 
 	$options = parse_args
 	$csv = get_csv($options.file)
 	$wordmapping = get_eci($options.eci)
+	# Build intermediary hash from CSV file
+	$map_hash = map_hash
+
 
 	if $options.direction == "IN"
 		in_it
