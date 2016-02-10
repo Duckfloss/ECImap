@@ -12,8 +12,8 @@ require 'ostruct'
 require 'inifile'
 
 # TEMPS
-ARGV << "C:/Documents and Settings/pos/desktop/test.csv"
-ARGV << "IN"
+#ARGV << "C:/Documents and Settings/pos/desktop/test.csv"
+#ARGV << "IN"
 
 
 
@@ -122,7 +122,7 @@ def in_it
 	end
 
 	# Write map definitions back to CSV file
-	CSV.open(options.file, 'w') do |csv_obj|
+	CSV.open($options.file, 'w') do |csv_obj|
 		csv_obj << ['Attr','Color']
 		$csv.each do |row|
 			if !row[:attr].nil? && $map_hash.has_key?( row[:attr] )
@@ -134,7 +134,7 @@ def in_it
 			end
 		end
 	end
-
+	exit 0
 end
 
 def out_it
@@ -143,30 +143,16 @@ def out_it
 end
 
 
-
-
-$options = parse_args
-$csv = get_csv($options.file)
-$wordmapping = get_eci($options.eci)
-
-if $options.direction == "IN"
-	in_it
-elsif $options.direction == "OUT"
-	out_it
-end
-
-#exit 0
-
 if __FILE__ == $0
 
-	options = parse_args
+	$options = parse_args
+	$csv = get_csv($options.file)
+	$wordmapping = get_eci($options.eci)
 
-	puts options
-
-#	path = options.source.slice(0,options.source.index(/\/[A-Za-z0-9\-\_]+\.csv$/)+1)
-#	file = options.source.slice(/[A-Za-z0-9\-\_]+\.csv$/)
-#	csv_target = "#{path}FILTERED#{file}"
-
-#	doit(options.source, csv_target)
+	if $options.direction == "IN"
+		in_it
+	elsif $options.direction == "OUT"
+		out_it
+	end
 
 end
