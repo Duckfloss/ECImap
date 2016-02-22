@@ -135,6 +135,20 @@ def map_hash
 	map_hash
 end
 
+class IniFile
+	def write( opts = {} )
+		filename = opts.fetch(:filename, @filename)
+		@fn = filename unless filename.nil?
+		File.open(@fn, 'w') do |f|
+			@ini.each do |section,hash|
+				f.puts "[#{section}]"
+				hash.each {|param,val| f.puts "#{param}#{@param}#{escape_value val}"}
+				f.puts
+			end
+		end
+		self
+	end
+end
 
 def in_it
 	# Get map definitions from ECI file
