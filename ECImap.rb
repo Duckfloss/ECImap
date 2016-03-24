@@ -85,7 +85,7 @@ def print_help
 	puts "fills IN the \"Color\" column from the ECI file, or it OUTputs color maps\n"
 	puts "to the ECI file.\n"
 	puts "\n"
-	puts "Usage: leemd.rb FILE IN/OUT [options]\n"
+	puts "Usage: ecimap.rb FILE IN/OUT [options]\n"
 	puts "\n"
 	puts "  FILE - is a csv-file with two columns: Attr and Color\n"
 	puts "  IN/OUT - IN fills IN the csv file from ECI\n"
