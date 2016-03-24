@@ -55,7 +55,8 @@ def parse_args
 	
 	e = ARGV.select{|flag| flag=~/^\-e/}[0]
 	if !e.nil? && e.length > 0
-		e.sub!(/^\-e\ /,"")
+		i = ARGV.find_index(e)+1
+		e = ARGV[i]
 		if e.length < 1
 			puts "Please give us a file name to get/put map data from/to. The default location \nfor this file is \"C:/Documents and Settings/pos/Desktop/Website/Toolbox/ECImap/data/ECLink.INI\" if you wanna just use that."
 			exit 0
