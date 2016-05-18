@@ -15,6 +15,7 @@ require 'csv'
 require 'optparse'
 require 'ostruct'
 require 'inifile'
+require 'fileutils'
 
 # TEMPS
 #ARGV << "C:/Documents and Settings/pos/desktop/test.csv"
@@ -151,7 +152,22 @@ class IniFile
 	end
 end
 
+def copy_eci
+	# Copy ECI file from R: to C:
+	source = "R:/RETAIL/RPRO/EC/ECLink.INI"
+	dest = "C:/Documents and Settings/pos/Desktop/Website/Toolbox/ECImap/data/ECLink.INI"
+	FileUtils.cp(source, dest)
+	return dest
+end
+
 def in_it
+	# Copy eci file to temp dir
+	temp_eci = copy_eci
+
+	# Parse ECI file
+	$wordmapping = get_eci(temp_eci)
+
+
 	# Get map definitions from ECI file
 	$map_hash.each_key do |col|
 		$map_hash[col] = $wordmapping[col] unless $wordmapping[col].nil?
@@ -174,6 +190,11 @@ def in_it
 end
 
 def out_it
+	# Copy eci file to temp dir
+	temp_eci = copy_eci
+
+	# Parse ECI file
+	$wordmapping = get_eci(temp_eci)
 
 	$wordmapping.merge!($map_hash) do |attr,oldcolor,newcolor|
 		if oldcolor.nil?
@@ -189,8 +210,15 @@ def out_it
 		newwordmapping["ATTR<_as_>#{attr}"] = color
 	end
 
+	# Write eci to C:
 	$eci['WordMapping'] = newwordmapping
 	$eci.write
+
+	# Backup eci file in R:
+	FileUtils.cp("R:/RETAIL/RPRO/EC/ECLink.INI", "R:/RETAIL/RPRO/EC/ECLink.OLD")
+	# Then copy temp_eci to R:
+	FileUtils.cp("C:/Documents and Settings/pos/Desktop/Website/Toolbox/ECImap/data/ECLink.INI", "R:/RETAIL/RPRO/EC/ECLink.INI")
+
 	exit 0
 end
 
@@ -199,7 +227,6 @@ if __FILE__ == $0
 
 	$options = parse_args
 	$csv = get_csv($options.file)
-	$wordmapping = get_eci($options.eci)
 	# Build intermediary hash from CSV file
 	$map_hash = map_hash
 
