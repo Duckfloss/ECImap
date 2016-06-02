@@ -222,8 +222,8 @@ def out_it
 	exit 0
 end
 
-
-if __FILE__ == $0
+def run
+#if __FILE__ == $0
 
 	$options = parse_args
 	$csv = get_csv($options.file)
@@ -237,4 +237,5 @@ if __FILE__ == $0
 		out_it
 	end
 
+#end
 end
